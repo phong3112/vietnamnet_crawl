@@ -1,18 +1,25 @@
 # -*- coding: utf-8 -*-
-#import scrapy
+import scrapy
 from scrapy import Spider
 from scrapy.selector import Selector
 from vietnamnet.items import VietnamnetItem
-from scrapy.spiders import CrawlSpider
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.contrib.linkextractors import LinkExtractor
 
+#import pudb; pudb.set_trace()
 
-class VietnamnetCrawlSpider(Spider):
+class VietnamnetCrawlSpider(CrawlSpider):
     name = "vietnamnet_crawl"
     allowed_domains = ["vietnamnet.vn"]
     start_urls = ["http://vietnamnet.vn"]
 
+    rules = [
+        Rule(LinkExtractor(allow=('(.*\/vn\/.*)')), callback = 'parse', follow = True),
+        Rule(LinkExtractor(allow=('(.*\/vn\/.*\/$)')), callback = 'parse_top_menu', follow=True),
+        Rule(LinkExtractor(allow=('(.*\/vn\/.*\.html)')), callback = 'parse_dir_contents', follow=True),
+    ]
     def parse(self, response):
-        for top_url in response.xpath('//ul[@class="menu-top"]/li[@class="item"]/a/@href').extract()[1:]:
+        for top_url in response.xpath('//ul[@class="menu-top "]/li[@class="item"]/a/@href').extract()[1:]:
             url = response.urljoin(top_url)
             yield scrapy.Request(url, callback=self.parse_top_menu)
 
